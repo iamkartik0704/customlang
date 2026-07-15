@@ -7,6 +7,7 @@ export type NodeType =
   | "varDeclaration"
 
 //   expressions
+  | "AssignmentExpr"
   | "BinaryExp"
   | "NumericLiteral"
   | "Identifier"
@@ -29,6 +30,19 @@ export interface varDeclaration extends Stmt {
 }
 
 export interface Expr extends Stmt {}
+export interface AssignmentExpr extends Expr{
+  kind:"AssignmentExpr";
+  assigne:Expr;
+  /*
+  why are we choosing assigne to be Expr and not string
+  say x = {flower:"lily"}
+  but when i want to update it i would write:
+  x.flower = "marigold"
+  so here x.flower this thing is not a string
+  
+   */
+  value:Expr;
+}
 
 export interface BinaryExp extends Expr {
   kind: "BinaryExp";

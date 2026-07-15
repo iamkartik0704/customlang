@@ -8,6 +8,7 @@ import {
   Stmt,
   NullLiteral,
   varDeclaration,
+  AssignmentExpr,
 } from "./ast";
 
 export default class Parser {
@@ -67,8 +68,21 @@ export default class Parser {
     return declaration;
   }
   private parseExp(): Expr {
-    return this.parsePAdditiveExpr();
+    return this.parseAssignmentExpr();
   }
+  
+  parseAssignmentExpr(): Expr {
+    const left = this.parsePAdditiveExpr();  
+    if(this.at().type == Tokentype.Equals){
+      this.eat();    // advances past equals
+      const value = this.parseAssignmentExpr();
+      // this has been done to handle x=alpha=beta;(chained equation)
+      return { value, assigne: left, kind: "AssignmentExpr" } as AssignmentExpr;
+    } 
+    return left;
+  }
+
+
   private expect(type: Tokentype, err: any) {
     const prev = this.tokens.shift() as Token;
     if (!prev || prev.type !== type) {

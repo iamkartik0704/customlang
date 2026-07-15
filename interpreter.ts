@@ -1,5 +1,5 @@
 import { makeNull, NullVal, NumberVal, runtimeVal, ValueType } from "./values";
-import { BinaryExp, Identifier, NodeType, NumericLiteral, Program, Stmt, varDeclaration } from "./ast";
+import { AssignmentExpr, BinaryExp, Identifier, NodeType, NumericLiteral, Program, Stmt, varDeclaration } from "./ast";
 import env from "./env";
 
 function evaluateProgram(program: Program, env: env): runtimeVal {
@@ -57,6 +57,16 @@ function evaluateIdentifier(ident: Identifier, env: env) {
     return env.lookVar(ident.symbol);
 }
 
+function evaluateAssignment(node:AssignmentExpr,env:env):runtimeVal{
+    if(node.assigne.kind!=="Identifier"){
+        throw new Error(`invalid LHS inside assignment expr ${JSON.stringify(node.assigne)}`)
+    }
+    const varName = (node.assigne as Identifier).symbol;
+    return env.assignVar(varName,evaluate(node.value,env));
+    // evaluate converts expression to runtimeVal
+}
+
+
 function evaluateVarDeclaration(declaration: varDeclaration, env: env): runtimeVal {
     const value = declaration.value ? evaluate(declaration.value, env) : makeNull();
     return env.declareVar(declaration.identifier, value,declaration.constant);
@@ -76,6 +86,8 @@ export function evaluate(astNode: Stmt, env: env): runtimeVal {
             return evaluateIdentifier(astNode as Identifier, env);
         case "BinaryExp":
             return evaluateBinaryExp(astNode as BinaryExp, env);
+        case "AssignmentExpr":
+            return evaluateAssignment(astNode as AssignmentExpr, env);
         case "Program":
             return evaluateProgram(astNode as Program, env);
         case "varDeclaration":
