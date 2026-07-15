@@ -2,7 +2,7 @@
 
 
 // TypeScript String Literal Union.
-export type NodeType = "Program" | "BinaryExp" | "NumericLiteral" | "Identifier";
+export type NodeType = "Program" | "BinaryExp" | "NumericLiteral" | "Identifier" | "NullLiteral";
 // we can aslo include functionDeclaration,unaryExpression,callExpression
 
 export interface Stmt{
@@ -32,4 +32,10 @@ export interface Identifier extends Expr
 {
     kind:"Identifier";
     symbol:string;
+}
+
+export interface NullLiteral extends Expr
+{
+    kind:"NullLiteral";
+    value:"null";
 }

@@ -1,5 +1,5 @@
 import { Token,tokenize,Tokentype } from "./lexer";
-import { Expr,BinaryExp,NumericLiteral,Identifier,Program,Stmt } from "./ast";
+import { Expr,BinaryExp,NumericLiteral,Identifier,Program,Stmt, NullLiteral } from "./ast";
 
 export default class Parser{
     private tokens:Token[] = [];
@@ -74,6 +74,10 @@ export default class Parser{
                 this.expect(Tokentype.CloseParens , "unexpected token found inside the parenthesised  expression. Expected closing parenthesis")   // for closing param
                 return value;
             }
+
+            case Tokentype.Null:
+                this.eat();    // advance past the null literal
+                return {kind:"NullLiteral" , value:"null"} as NullLiteral
         
             default:
                 throw new Error(`unexpected token type encountered while parsing: ${JSON.stringify(this.at())}`)
