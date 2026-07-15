@@ -1,78 +1,85 @@
-import { makeNull, NullVal, NumberVal, runtimeVal , ValueType } from "./values"; 
-import {BinaryExp, Identifier, NodeType,NumericLiteral,Program,Stmt} from "./ast";
+import { makeNull, NullVal, NumberVal, runtimeVal, ValueType } from "./values";
+import { BinaryExp, Identifier, NodeType, NumericLiteral, Program, Stmt, varDeclaration } from "./ast";
 import env from "./env";
 
-function evaluateProgram(program:Program,env:env):runtimeVal{
-    let lastEvaluated : runtimeVal = makeNull();
+function evaluateProgram(program: Program, env: env): runtimeVal {
+    let lastEvaluated: runtimeVal = makeNull();
 
-    for (const statement of program.body){
-        lastEvaluated = evaluate(statement,env);
+    for (const statement of program.body) {
+        lastEvaluated = evaluate(statement, env);
     }
     return lastEvaluated;
 }
-function evaluateNumericBinaryExpr(lhs:NumberVal , rhs:NumberVal , operator:string):NumberVal{
-    let result:number;
-    if(operator == "+"){
-        result = lhs.value+rhs.value;
+function evaluateNumericBinaryExpr(lhs: NumberVal, rhs: NumberVal, operator: string): NumberVal {
+    let result: number;
+    if (operator == "+") {
+        result = lhs.value + rhs.value;
     }
 
-    else if(operator == "-"){
+    else if (operator == "-") {
         result = lhs.value - rhs.value;
     }
 
-    else if(operator == "*"){
+    else if (operator == "*") {
         result = lhs.value * rhs.value;
     }
 
-    else if(operator == "/"){
-        if(rhs.value == 0){
+    else if (operator == "/") {
+        if (rhs.value == 0) {
             throw new Error(`Division by zero is not allowed`);
         }
         result = lhs.value / rhs.value;
     }
-    else if(operator == "%"){
+    else if (operator == "%") {
         result = lhs.value % rhs.value;
     }
-    else{
+    else {
         throw new Error(`${operator} operator has not been fed `);
     }
 
-    return {value:result , type:"number"}
+    return { value: result, type: "number" }
 
 }
-function evaluateBinaryExp(binop:BinaryExp,env:env):runtimeVal{
-    const lhs = evaluate(binop.left,env);
-    const rhs = evaluate(binop.right,env);
+function evaluateBinaryExp(binop: BinaryExp, env: env): runtimeVal {
+    const lhs = evaluate(binop.left, env);
+    const rhs = evaluate(binop.right, env);
 
-    if(lhs.type=="number" && rhs.type == "number"){
-        return evaluateNumericBinaryExpr(lhs as NumberVal , rhs as NumberVal, binop.operator);
+    if (lhs.type == "number" && rhs.type == "number") {
+        return evaluateNumericBinaryExpr(lhs as NumberVal, rhs as NumberVal, binop.operator);
     }
     // if any or both are null
-    else{
+    else {
         return makeNull();
     }
 }
 
-function evaluateIdentifier(ident:Identifier , env:env){
+function evaluateIdentifier(ident: Identifier, env: env) {
     return env.lookVar(ident.symbol);
 }
 
-export function evaluate(astNode:Stmt , env:env):runtimeVal{
-    switch(astNode.kind){
+function evaluateVarDeclaration(declaration: varDeclaration, env: env): runtimeVal {
+    const value = declaration.value ? evaluate(declaration.value, env) : makeNull();
+    return env.declareVar(declaration.identifier, value,declaration.constant);
+}
+
+export function evaluate(astNode: Stmt, env: env): runtimeVal {
+    switch (astNode.kind) {
         case "NumericLiteral":
             return {
-                value:((astNode as NumericLiteral).value),
+                value: ((astNode as NumericLiteral).value),
                 type: "number",
             } as NumberVal;
 
         case "NullLiteral":
             return makeNull();
         case "Identifier":
-            return evaluateIdentifier(astNode as Identifier , env);
+            return evaluateIdentifier(astNode as Identifier, env);
         case "BinaryExp":
-            return evaluateBinaryExp(astNode as BinaryExp,env);
+            return evaluateBinaryExp(astNode as BinaryExp, env);
         case "Program":
-            return evaluateProgram(astNode as Program,env);
+            return evaluateProgram(astNode as Program, env);
+        case "varDeclaration":
+            return evaluateVarDeclaration(astNode as varDeclaration, env);
         default:
             throw new Error(`This AST node has not been set for interpretation! ${JSON.stringify(astNode)}`);
     }

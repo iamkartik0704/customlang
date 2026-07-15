@@ -15,6 +15,8 @@ export enum Tokentype {
   Error,
   Let,
   EOF,
+  const,
+  Semicolon,
 }
 /*
 
@@ -27,6 +29,7 @@ creating a record for keywords (acts like a dictionary){    record in TS is equi
 const KEYWORDS: Record<string, Tokentype> = {
   let: Tokentype.Let,
   Null: Tokentype.Null,
+  const:Tokentype.const,
 };
 
 // interface is TS is what struct in Cpp
@@ -87,7 +90,12 @@ export function tokenize(sourceCode: string): Token[] {
     } else if (src[0] === "=") {
       tokens.push(token(src[0], Tokentype.Equals));
       src.shift();
-    } else {
+    } 
+    else if (src[0] === ";") {
+      tokens.push(token(src[0], Tokentype.Semicolon));
+      src.shift();
+    }
+    else {
       // this would be responsible for handelling the multicharacter tokens
       // 1. handelling the number tokens
 

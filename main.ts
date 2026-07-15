@@ -47,5 +47,5 @@ function promptUser() {
 promptUser();
 
 // environment.declareVar("x", {value: 100, type: "number"} as NumberVal);
-environment.declareVar("x",makeNumber(45));
-environment.declareVar("true",makeBoolean(true));
+// environment.declareVar("x",makeNumber(45));
+// environment.declareVar("true",makeBoolean(true));
