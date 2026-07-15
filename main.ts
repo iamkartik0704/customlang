@@ -1,4 +1,5 @@
 import Parser from "./parser";
+import { evaluate } from "./interpreter";
 
 // Tell TypeScript 'require' exists
 declare const require: any;
@@ -28,7 +29,8 @@ function promptUser() {
 
         try {
             const program = parser.produceAST(input);
-            console.dir(program, { depth: null });
+            const result = evaluate(program);
+            console.log(result);
         } catch (error: any) {
             console.error(error.message);
         }
@@ -40,3 +42,4 @@ function promptUser() {
 
 // Start the REPL
 promptUser();
+
