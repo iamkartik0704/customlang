@@ -15,6 +15,7 @@ export enum Tokentype{
     BinaryOperators,
     Error,
     Let,
+    EOF,
 }
 /*
 
@@ -78,7 +79,7 @@ export function tokenize(sourceCode:string): Token[] {
             tokens.push(token(src[0] , Tokentype.CloseParens));
             src.shift();
         }
-        else if(src[0] === "+" || src[0] === "-" || src[0] === "*" || src[0] === "/"){
+        else if(src[0] === "+" || src[0] === "-" || src[0] === "*" || src[0] === "/"||src[0] === "%" ){
             tokens.push(token(src[0] , Tokentype.BinaryOperators));
             src.shift();
         }
@@ -127,11 +128,12 @@ export function tokenize(sourceCode:string): Token[] {
         }
 
     }
+    tokens.push({type:Tokentype.EOF , value:"EndOfTheFile"});
 
     return tokens;
 }
 
 
-const sourceCode = fs.readFileSync("./test.txt", "utf-8");
-const tokens = tokenize(sourceCode);
-console.log(tokens);
+// const sourceCode = fs.readFileSync("./test.txt", "utf-8");
+// const tokens = tokenize(sourceCode);
+// console.log(tokens);
