@@ -1,5 +1,7 @@
 import Parser from "./parser";
 import { evaluate } from "./interpreter";
+import env from "./env";
+import { makeBoolean, makeNumber, NumberVal } from "./values";
 
 // Tell TypeScript 'require' exists
 declare const require: any;
@@ -7,7 +9,7 @@ declare const require: any;
 // Use standard 'readline' (callbacks), NOT 'readline/promises'
 const readline = require("readline");
 const process = (globalThis as any).process;
-
+const environment = new env();
 const parser = new Parser();
 console.log("\nToad v1.0.0");
 
@@ -15,6 +17,7 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
+
 
 // We use a recursive function instead of a while loop for callbacks
 function promptUser() {
@@ -29,7 +32,7 @@ function promptUser() {
 
         try {
             const program = parser.produceAST(input);
-            const result = evaluate(program);
+            const result = evaluate(program,environment);
             console.log(result);
         } catch (error: any) {
             console.error(error.message);
@@ -43,3 +46,6 @@ function promptUser() {
 // Start the REPL
 promptUser();
 
+// environment.declareVar("x", {value: 100, type: "number"} as NumberVal);
+environment.declareVar("x",makeNumber(45));
+environment.declareVar("true",makeBoolean(true));

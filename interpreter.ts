@@ -1,11 +1,12 @@
-import { NullVal, NumberVal, runtimeVal , ValueType } from "./values"; 
-import {BinaryExp, NodeType,NumericLiteral,Program,Stmt} from "./ast";
+import { makeNull, NullVal, NumberVal, runtimeVal , ValueType } from "./values"; 
+import {BinaryExp, Identifier, NodeType,NumericLiteral,Program,Stmt} from "./ast";
+import env from "./env";
 
-function evaluateProgram(program:Program):runtimeVal{
-    let lastEvaluated : runtimeVal = { type:"null" , value:"null"} as NullVal;
+function evaluateProgram(program:Program,env:env):runtimeVal{
+    let lastEvaluated : runtimeVal = makeNull();
 
     for (const statement of program.body){
-        lastEvaluated = evaluate(statement);
+        lastEvaluated = evaluate(statement,env);
     }
     return lastEvaluated;
 }
@@ -39,20 +40,24 @@ function evaluateNumericBinaryExpr(lhs:NumberVal , rhs:NumberVal , operator:stri
     return {value:result , type:"number"}
 
 }
-function evaluateBinaryExp(binop:BinaryExp):runtimeVal{
-    const lhs = evaluate(binop.left);
-    const rhs = evaluate(binop.right);
+function evaluateBinaryExp(binop:BinaryExp,env:env):runtimeVal{
+    const lhs = evaluate(binop.left,env);
+    const rhs = evaluate(binop.right,env);
 
     if(lhs.type=="number" && rhs.type == "number"){
         return evaluateNumericBinaryExpr(lhs as NumberVal , rhs as NumberVal, binop.operator);
     }
     // if any or both are null
     else{
-        return {type:"null" , value:"null"} as NullVal;
+        return makeNull();
     }
 }
 
-export function evaluate(astNode:Stmt):runtimeVal{
+function evaluateIdentifier(ident:Identifier , env:env){
+    return env.lookVar(ident.symbol);
+}
+
+export function evaluate(astNode:Stmt , env:env):runtimeVal{
     switch(astNode.kind){
         case "NumericLiteral":
             return {
@@ -61,12 +66,13 @@ export function evaluate(astNode:Stmt):runtimeVal{
             } as NumberVal;
 
         case "NullLiteral":
-            return {value:"null",type:"null"} as NullVal;
+            return makeNull();
+        case "Identifier":
+            return evaluateIdentifier(astNode as Identifier , env);
         case "BinaryExp":
-            return evaluateBinaryExp(astNode as BinaryExp);
-
+            return evaluateBinaryExp(astNode as BinaryExp,env);
         case "Program":
-            return evaluateProgram(astNode as Program);
+            return evaluateProgram(astNode as Program,env);
         default:
             throw new Error(`This AST node has not been set for interpretation! ${JSON.stringify(astNode)}`);
     }
