@@ -1,4 +1,4 @@
-export type ValueType = "null" | "number" | "boolean";
+export type ValueType = "null" | "number" | "boolean" | "object";
 
 export interface runtimeVal{
     type:ValueType;
@@ -30,4 +30,9 @@ export function makeBoolean(b=true){
 
 export function makeNull(){
     return {type:"null" , value:null} as NullVal;
+}
+
+export interface ObjectVal extends runtimeVal{
+    type:"object";
+    properties:Record<string,runtimeVal>;
 }

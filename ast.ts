@@ -2,11 +2,13 @@
 
 // TypeScript String Literal Union.
 export type NodeType =
-// statement
+  // statement
   | "Program"
   | "varDeclaration"
 
-//   expressions
+  //   expressions
+  | "Property"
+  | "ObjectLiteral" // object is an array of properties
   | "AssignmentExpr"
   | "BinaryExp"
   | "NumericLiteral"
@@ -24,15 +26,15 @@ export interface Program extends Stmt {
 }
 export interface varDeclaration extends Stmt {
   kind: "varDeclaration";
-  constant:boolean;
+  constant: boolean;
   value?: Expr;
-  identifier:string;
+  identifier: string;
 }
 
 export interface Expr extends Stmt {}
-export interface AssignmentExpr extends Expr{
-  kind:"AssignmentExpr";
-  assigne:Expr;
+export interface AssignmentExpr extends Expr {
+  kind: "AssignmentExpr";
+  assigne: Expr;
   /*
   why are we choosing assigne to be Expr and not string
   say x = {flower:"lily"}
@@ -41,7 +43,7 @@ export interface AssignmentExpr extends Expr{
   so here x.flower this thing is not a string
   
    */
-  value:Expr;
+  value: Expr;
 }
 
 export interface BinaryExp extends Expr {
@@ -64,4 +66,15 @@ export interface Identifier extends Expr {
 export interface NullLiteral extends Expr {
   kind: "NullLiteral";
   value: "null";
+}
+
+export interface Property extends Expr {
+  kind: "Property";
+  key: string;
+  value?: Expr;
+}
+
+export interface ObjectLiteral extends Expr {
+  kind: "ObjectLiteral";
+  properties: Property[];
 }

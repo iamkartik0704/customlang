@@ -9,6 +9,8 @@ import {
   NullLiteral,
   varDeclaration,
   AssignmentExpr,
+  Property,
+  ObjectLiteral,
 } from "./ast";
 
 export default class Parser {
@@ -23,8 +25,13 @@ export default class Parser {
       case Tokentype.Let:
       case Tokentype.const:
         return this.parseVarDeclartion();
-      default:
-        return this.parseExp();
+      default: {
+        const expr = this.parseExp();
+        if (this.at().type == Tokentype.Semicolon) {
+          this.eat();
+        }
+        return expr;
+      }
     }
   }
   // LET identifier;        // only declaration
@@ -70,18 +77,64 @@ export default class Parser {
   private parseExp(): Expr {
     return this.parseAssignmentExpr();
   }
-  
-  parseAssignmentExpr(): Expr {
-    const left = this.parsePAdditiveExpr();  
-    if(this.at().type == Tokentype.Equals){
-      this.eat();    // advances past equals
+
+  private parseAssignmentExpr(): Expr {
+    const left = this.parseObjectExpr();
+    if (this.at().type == Tokentype.Equals) {
+      this.eat(); // advances past equals
       const value = this.parseAssignmentExpr();
       // this has been done to handle x=alpha=beta;(chained equation)
       return { value, assigne: left, kind: "AssignmentExpr" } as AssignmentExpr;
-    } 
+    }
     return left;
   }
+  private parseObjectExpr(): Expr {
+    if (this.at().type !== Tokentype.OpenBrace) {
+      return this.parsePAdditiveExpr();
+    }
+    this.eat(); // advance past openBrace
+    const properties = new Array<Property>();
 
+    while (this.notEOF() && this.at().type !== Tokentype.CloseBrace) {
+      // cases to handle
+      // {key:val,}
+      // {key,}
+      const key = this.expect(
+        Tokentype.Identifier,
+        "Object Literal Expects a key",
+      ).value;
+
+      // {key,}
+      if (this.at().type == Tokentype.Comma) {
+        this.eat(); // advance past comma
+        properties.push({ key, kind: "Property" } as Property);
+        continue;
+      }
+      // {key}
+      else if (this.at().type == Tokentype.Comma) {
+        properties.push({ key, kind: "Property" } as Property);
+        continue;
+      }
+      // {key,val}
+      this.expect(
+        Tokentype.Colon,
+        "Missing Colon following identifer in the object Literal",
+      );
+      const value = this.parseExp(); // value can be anything like array,object and not just a string only
+      properties.push({ key, value, kind: "Property" });
+
+      if (this.at().type != Tokentype.CloseBrace) {
+        this.expect(
+          Tokentype.Comma,
+          "Expected comma or closing bracket following property! ",
+        );
+        
+      }
+    }
+
+    this.expect(Tokentype.CloseBrace, "Object Literal missing Closing Bracket");
+    return { kind: "ObjectLiteral", properties } as ObjectLiteral;
+  }
 
   private expect(type: Tokentype, err: any) {
     const prev = this.tokens.shift() as Token;

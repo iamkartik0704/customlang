@@ -1,4 +1,12 @@
-import { runtimeVal } from "./values";
+import { makeBoolean, runtimeVal } from "./values";
+
+export function createGlobalEnv(){
+  // functions can ne added here
+  const environment = new env();
+  environment.declareVar("false",makeBoolean(false),true);
+  environment.declareVar("true",makeBoolean(true),true);
+  return environment;
+}
 
 export default class env {
   private parent?: env;
@@ -9,10 +17,14 @@ export default class env {
   private constants : Record<string,boolean>;
 
   constructor(parentENV?: env) {
+    const global = parentENV?true:false;
     this.parent = parentENV;
     // 2. Initialized as an empty object
     this.variables = {};
     this.constants = {};
+    // if(global){
+    //   setupScope(this);
+    // }
   }
 
   // declaring a variable
