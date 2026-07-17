@@ -1,4 +1,4 @@
-import { Token, tokenize, Tokentype } from "./lexer";
+import { Token, tokenize, Tokentype  } from "./lexer";
 import {
   Expr,
   BinaryExp,
@@ -13,6 +13,7 @@ import {
   ObjectLiteral,
   CallExpr,
   MemberExpr,
+  FunctionDeclaration,
 } from "./ast";
 
 export default class Parser {
@@ -27,6 +28,8 @@ export default class Parser {
       case Tokentype.Let:
       case Tokentype.const:
         return this.parseVarDeclartion();
+      case Tokentype.Fn:
+        return this.parseFnDeclaration();
       default: {
         const expr = this.parseExp();
         if (this.at().type == Tokentype.Semicolon) {
@@ -35,6 +38,35 @@ export default class Parser {
         return expr;
       }
     }
+  }
+  private parseFnDeclaration(): Stmt {
+    this.eat();
+    const name = this.expect(
+      Tokentype.Identifier,
+      "Expected function name following the fn keyword",
+    ).value;
+    const args = this.parseArgs();
+    const params: string[] = [];
+    for (const arg of args) {
+      if (arg.kind !== "Identifier") {
+        console.log(arg);
+        throw new Error(
+          `inside the function declaration the parameters should be of the string type`
+        );
+
+      }
+      params.push((arg as Identifier).symbol);
+    }
+    this.expect(Tokentype.OpenBrace , "Expected function body following declaration");
+    const body:Stmt[] = [];
+    while(this.at().type!==Tokentype.EOF && this.at().type!==Tokentype.CloseBrace){
+      body.push(this.parseSMT());
+    }
+    this.expect(Tokentype.CloseBrace,"Expected a closing brace at the end");
+    const fn = {
+      name,body,parameters:params,kind:"FunctionDeclaration"
+    } as FunctionDeclaration;
+    return fn;
   }
   // LET identifier;        // only declaration
   // (let||const) identifier = Expr;       // assignment along with declaration
@@ -210,7 +242,9 @@ export default class Parser {
           computed = false;
           property = this.parsePrimaryExpr();
           if (property.kind != "Identifier") {
-            throw new Error(`cannot use dot expression without RHS being an identifier`);
+            throw new Error(
+              `cannot use dot expression without RHS being an identifier`,
+            );
           }
         } else {
           computed = true;

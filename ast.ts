@@ -5,6 +5,7 @@ export type NodeType =
   // statement
   | "Program"
   | "varDeclaration"
+  | "FunctionDeclaration"
 
   //   expressions
   | "MemberExpr"
@@ -33,6 +34,15 @@ export interface varDeclaration extends Stmt {
   identifier: string;
 }
 
+export interface FunctionDeclaration extends Stmt {
+  kind: "FunctionDeclaration";
+  parameters:string[];
+  name:string;
+  body:Stmt[];
+  // can add async and arrow keys as bool here 
+
+}
+
 export interface Expr extends Stmt {}
 export interface AssignmentExpr extends Expr {
   kind: "AssignmentExpr";
@@ -57,8 +67,8 @@ export interface BinaryExp extends Expr {
 
 export interface CallExpr extends Expr {
   kind: "CallExpr";
-  args:Expr[]; 
-  caller:Expr;
+  args: Expr[];
+  caller: Expr;
   // why caller is not an identifier:
   // we may call like this:-    print()    or         print.number() where the later is a member expression
 }

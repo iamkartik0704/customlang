@@ -1,5 +1,6 @@
 import env from "./env"
-export type ValueType = "null" | "number" | "boolean" | "object" |"native-fn";
+import { Stmt } from "./ast";
+export type ValueType = "null" | "number" | "boolean" | "object" |"native-fn" | "function";
 
 export interface runtimeVal{
     type:ValueType;
@@ -46,4 +47,12 @@ export interface NativeFnValue extends runtimeVal{
 
 export function makeNativeFn(call:functionCall){
     return {type:"native-fn" , call} as NativeFnValue;
+}
+
+export interface FunctionValue extends runtimeVal{
+    type:"function";
+    name:string;
+    parameters:string[];
+    declarationEnv:env;
+    body:Stmt[];
 }

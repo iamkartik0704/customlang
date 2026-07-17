@@ -8,6 +8,7 @@ export enum Tokentype {
   Null,
   Number,
   Equals,
+  Fn,
   Identifier,
   OpenParens,
   CloseParens,
@@ -37,6 +38,7 @@ const KEYWORDS: Record<string, Tokentype> = {
   let: Tokentype.Let,
   Null: Tokentype.Null,
   const: Tokentype.const,
+  fn:Tokentype.Fn,
 };
 
 // interface is TS is what struct in Cpp

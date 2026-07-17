@@ -1,4 +1,4 @@
-import { makeNull, NativeFnValue, NullVal, NumberVal, ObjectVal, runtimeVal, ValueType } from "./values";
+import { makeNull, NativeFnValue, NullVal, NumberVal, ObjectVal, runtimeVal, ValueType, FunctionValue } from "./values";
 import {
   AssignmentExpr,
   BinaryExp,
@@ -10,8 +10,10 @@ import {
   Program,
   Stmt,
   varDeclaration,
+  FunctionDeclaration,
 } from "./ast";
-import env from "./env";
+import Environment from "./env";
+type env = Environment;
 
 function evaluateProgram(program: Program, env: env): runtimeVal {
   let lastEvaluated: runtimeVal = makeNull();
@@ -88,6 +90,18 @@ function evaluateVarDeclaration(
   return env.declareVar(declaration.identifier, value, declaration.constant);
 }
 
+function evaluateFunctionDeclaration(declaration: FunctionDeclaration, env: env): runtimeVal {
+  const fn = {
+    type: "function",
+    name: declaration.name,
+    parameters: declaration.parameters,
+    declarationEnv: env,
+    body: declaration.body,
+  } as FunctionValue;
+
+  return env.declareVar(declaration.name, fn, true);
+}
+
 function evaluateObject(obj: ObjectLiteral, env: env): runtimeVal {
     const object = {type:"object" , properties:{}} as ObjectVal;
     for(const {key,value} of obj.properties){
@@ -101,14 +115,38 @@ function evaluateObject(obj: ObjectLiteral, env: env): runtimeVal {
 function evaluateCallExpr(expr:CallExpr , env:env):runtimeVal{
   const args = expr.args.map((arg)=>evaluate(arg,env));
   const fn = evaluate(expr.caller , env);
-  if(fn.type!="native-fn"){
-    throw new Error(`Cannot call a value that is not a function ${JSON.stringify(fn)}`);
-  }
-  const result = (fn as NativeFnValue).call(args,env);
-  // this calls the anonymous function we set up for toad
 
-  
-  return result;
+  if(fn.type == "native-fn"){
+    const result = (fn as NativeFnValue).call(args,env);
+    return result;
+  }
+
+  if (fn.type == "function") {
+    const func = fn as FunctionValue;
+    const scope = new Environment(func.declarationEnv);
+
+    if (args.length !== func.parameters.length) {
+      throw new Error(
+        `Arity mismatch: Function '${func.name}' expects ${func.parameters.length} arguments, but got ${args.length}.`,
+      );
+    }
+
+    // Create variables for the arguments
+    for (let i = 0; i < func.parameters.length; i++) {
+        const varname = func.parameters[i];
+        scope.declareVar(varname, args[i], false);
+    }
+
+    let result: runtimeVal = makeNull();
+    // Evaluate the function body
+    for (const stmt of func.body) {
+        result = evaluate(stmt, scope);
+    }
+
+    return result;
+  }
+
+  throw new Error(`Cannot call a value that is not a function ${JSON.stringify(fn)}`);
 }
 
 export function evaluate(astNode: Stmt, env: env): runtimeVal {
@@ -135,6 +173,8 @@ export function evaluate(astNode: Stmt, env: env): runtimeVal {
       return evaluateProgram(astNode as Program, env);
     case "varDeclaration":
       return evaluateVarDeclaration(astNode as varDeclaration, env);
+    case "FunctionDeclaration":
+      return evaluateFunctionDeclaration(astNode as FunctionDeclaration, env);
     default:
       throw new Error(
         `This AST node has not been set for interpretation! ${JSON.stringify(astNode)}`,
