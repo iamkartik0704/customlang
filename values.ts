@@ -1,4 +1,5 @@
-export type ValueType = "null" | "number" | "boolean" | "object";
+import env from "./env"
+export type ValueType = "null" | "number" | "boolean" | "object" |"native-fn";
 
 export interface runtimeVal{
     type:ValueType;
@@ -35,4 +36,14 @@ export function makeNull(){
 export interface ObjectVal extends runtimeVal{
     type:"object";
     properties:Record<string,runtimeVal>;
+}
+export type functionCall = (args:runtimeVal[] , env:env)=>runtimeVal;
+
+export interface NativeFnValue extends runtimeVal{
+    type:"native-fn";
+    call:functionCall;
+}
+
+export function makeNativeFn(call:functionCall){
+    return {type:"native-fn" , call} as NativeFnValue;
 }

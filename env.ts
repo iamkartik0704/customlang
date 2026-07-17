@@ -1,10 +1,20 @@
-import { makeBoolean, runtimeVal } from "./values";
+import { makeBoolean, makeNativeFn, makeNull, makeNumber, runtimeVal } from "./values";
 
-export function createGlobalEnv(){
+export function createGlobalEnv() {
   // functions can ne added here
   const environment = new env();
-  environment.declareVar("false",makeBoolean(false),true);
-  environment.declareVar("true",makeBoolean(true),true);
+  environment.declareVar("false", makeBoolean(false), true);
+  environment.declareVar("true", makeBoolean(true), true);
+  environment.declareVar("toad",
+    makeNativeFn((args, scope) => {
+      console.log(...args);
+      return makeNull();
+    }),
+    true);
+  function timefunction(_args: runtimeVal[], _env: env) {
+    return makeNumber(Date.now())
+  }
+  environment.declareVar("time", makeNativeFn(timefunction), true);
   return environment;
 }
 
@@ -14,10 +24,10 @@ export default class env {
 
   // 1. Swapped Map for a standard Record (Object)
   private variables: Record<string, runtimeVal>;
-  private constants : Record<string,boolean>;
+  private constants: Record<string, boolean>;
 
   constructor(parentENV?: env) {
-    const global = parentENV?true:false;
+    const global = parentENV ? true : false;
     this.parent = parentENV;
     // 2. Initialized as an empty object
     this.variables = {};
@@ -44,7 +54,7 @@ export default class env {
     // 4. Swapped .set() for standard bracket notation
     this.variables[varName] = value;
     if (constant) {
-        this.constants[varName] = true; 
+      this.constants[varName] = true;
     }
     return value;
   }
@@ -64,7 +74,7 @@ export default class env {
   public assignVar(varName: string, value: runtimeVal): runtimeVal {
     const env = this.resolve(varName);
     if (env.constants.hasOwnProperty(varName)) {
-        throw new Error(`Cannot reassign variable '${varName}' because it is a constant.`);
+      throw new Error(`Cannot reassign variable '${varName}' because it is a constant.`);
     }
     env.variables[varName] = value;
     return value;

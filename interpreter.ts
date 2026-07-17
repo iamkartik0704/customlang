@@ -1,7 +1,8 @@
-import { makeNull, NullVal, NumberVal, ObjectVal, runtimeVal, ValueType } from "./values";
+import { makeNull, NativeFnValue, NullVal, NumberVal, ObjectVal, runtimeVal, ValueType } from "./values";
 import {
   AssignmentExpr,
   BinaryExp,
+  CallExpr,
   Identifier,
   NodeType,
   NumericLiteral,
@@ -97,6 +98,19 @@ function evaluateObject(obj: ObjectLiteral, env: env): runtimeVal {
     return object;
 }
 
+function evaluateCallExpr(expr:CallExpr , env:env):runtimeVal{
+  const args = expr.args.map((arg)=>evaluate(arg,env));
+  const fn = evaluate(expr.caller , env);
+  if(fn.type!="native-fn"){
+    throw new Error(`Cannot call a value that is not a function ${JSON.stringify(fn)}`);
+  }
+  const result = (fn as NativeFnValue).call(args,env);
+  // this calls the anonymous function we set up for toad
+
+  
+  return result;
+}
+
 export function evaluate(astNode: Stmt, env: env): runtimeVal {
   switch (astNode.kind) {
     case "NumericLiteral":
@@ -111,6 +125,8 @@ export function evaluate(astNode: Stmt, env: env): runtimeVal {
       return evaluateIdentifier(astNode as Identifier, env);
     case "ObjectLiteral":
       return evaluateObject(astNode as ObjectLiteral, env);
+    case "CallExpr":
+      return evaluateCallExpr(astNode as CallExpr , env);
     case "BinaryExp":
       return evaluateBinaryExp(astNode as BinaryExp, env);
     case "AssignmentExpr":
