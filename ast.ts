@@ -7,6 +7,8 @@ export type NodeType =
   | "varDeclaration"
 
   //   expressions
+  | "MemberExpr"
+  | "CallExpr"
   | "Property"
   | "ObjectLiteral" // object is an array of properties
   | "AssignmentExpr"
@@ -51,6 +53,23 @@ export interface BinaryExp extends Expr {
   left: Expr;
   right: Expr;
   operator: string;
+}
+
+export interface CallExpr extends Expr {
+  kind: "CallExpr";
+  args:Expr[]; 
+  caller:Expr;
+  // why caller is not an identifier:
+  // we may call like this:-    print()    or         print.number() where the later is a member expression
+}
+
+export interface MemberExpr extends Expr {
+  kind: "MemberExpr";
+  object: Expr;
+  property: Expr;
+  computed: boolean;
+  // why need for computed:
+  // print.number () is equivalent to print["number"]   where the later:  have to compute the identifier as the string literal
 }
 
 export interface NumericLiteral extends Expr {

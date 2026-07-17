@@ -11,6 +11,8 @@ import {
   AssignmentExpr,
   Property,
   ObjectLiteral,
+  CallExpr,
+  MemberExpr,
 } from "./ast";
 
 export default class Parser {
@@ -36,7 +38,7 @@ export default class Parser {
   }
   // LET identifier;        // only declaration
   // (let||const) identifier = Expr;       // assignment along with declaration
-  parseVarDeclartion(): Stmt {
+  private parseVarDeclartion(): Stmt {
     const isConstant = this.eat().type == Tokentype.const;
     const identifier = this.expect(
       Tokentype.Identifier,
@@ -111,7 +113,7 @@ export default class Parser {
         continue;
       }
       // {key}
-      else if (this.at().type == Tokentype.Comma) {
+      else if (this.at().type == Tokentype.CloseBrace) {
         properties.push({ key, kind: "Property" } as Property);
         continue;
       }
@@ -128,7 +130,6 @@ export default class Parser {
           Tokentype.Comma,
           "Expected comma or closing bracket following property! ",
         );
-        
       }
     }
 
@@ -165,7 +166,8 @@ export default class Parser {
     return left;
   }
   private parseMultiplicativeExpr(): Expr {
-    let left = this.parsePrimaryExpr();
+    let left = this.parseCallMemberExpr();
+    // we will give this.parseCallMemberExpr() more precedence than multiplication but less than parsePrimaryExpr()
 
     while (
       this.at().value == "*" ||
@@ -173,7 +175,7 @@ export default class Parser {
       this.at().value == "%"
     ) {
       const operator = this.eat().value;
-      const right = this.parsePrimaryExpr();
+      const right = this.parseCallMemberExpr();
 
       left = {
         kind: "BinaryExp",
@@ -184,6 +186,69 @@ export default class Parser {
     }
     return left;
   }
+  // print.x()().y
+  private parseCallMemberExpr(): Expr {
+    let object = this.parsePrimaryExpr();
+
+    while (
+      this.at().type == Tokentype.Dot ||
+      this.at().type == Tokentype.OpenSquare ||
+      this.at().type == Tokentype.OpenParens
+    ) {
+      if (this.at().type == Tokentype.OpenParens) {
+        object = {
+          kind: "CallExpr",
+          caller: object,
+          args: this.parseArgs(),
+        } as CallExpr;
+      } else {
+        const operator = this.eat();
+        let property: Expr;
+        let computed: boolean;
+
+        if (operator.type == Tokentype.Dot) {
+          computed = false;
+          property = this.parsePrimaryExpr();
+          if (property.kind != "Identifier") {
+            throw new Error(`cannot use dot expression without RHS being an identifier`);
+          }
+        } else {
+          computed = true;
+          property = this.parseExp();
+          this.expect(Tokentype.CloseSquare, "Missing closing bracket");
+        }
+
+        object = {
+          kind: "MemberExpr",
+          object,
+          property,
+          computed,
+        } as MemberExpr;
+      }
+    }
+    return object;
+  }
+
+  private parseArgs(): Expr[] {
+    this.expect(Tokentype.OpenParens, "expected open parenthesis");
+    const args =
+      this.at().type == Tokentype.CloseParens ? [] : this.parseArguments();
+    this.expect(Tokentype.CloseParens, "Missing closing parenthesis");
+    return args;
+  }
+
+  private parseArguments(): Expr[] {
+    // here we would get the list of the args
+    const args = [this.parseAssignmentExpr()];
+    // fn sum(x=5,y=10);  just to support this we are using assignmentExpr
+
+    // we are parsing the fisrt value right here and then start from checking a comma
+    while (this.at().type == Tokentype.Comma && this.eat()) {
+      args.push(this.parseAssignmentExpr());
+    }
+    return args;
+  }
+  // the above two are almost similar except for the fact that one of them is the helper function of another
 
   private parsePrimaryExpr(): Expr {
     const tk = this.at().type;
@@ -250,6 +315,8 @@ export default class Parser {
 
 
 primaryExpr
+member 
+call
 unary
 multiplicative
 additive
@@ -257,5 +324,6 @@ comparison
 logical
 functionCall
 memberExpr
+object
 assignmentExpr
 */

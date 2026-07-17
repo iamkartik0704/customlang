@@ -21,6 +21,9 @@ export enum Tokentype {
   OpenBrace, // {
   CloseBrace, // }
   Comma,
+  OpenSquare,
+  CloseSquare,
+  Dot,
 }
 /*
 
@@ -88,6 +91,12 @@ export function tokenize(sourceCode: string): Token[] {
     } else if (src[0] === "{") {
       tokens.push(token(src[0], Tokentype.OpenBrace));
       src.shift();
+    } else if (src[0] === "]") {
+      tokens.push(token(src[0], Tokentype.CloseSquare));
+      src.shift();
+    } else if (src[0] === "[") {
+      tokens.push(token(src[0], Tokentype.OpenSquare));
+      src.shift();
     } else if (
       src[0] === "+" ||
       src[0] === "-" ||
@@ -99,6 +108,9 @@ export function tokenize(sourceCode: string): Token[] {
       src.shift();
     } else if (src[0] === "=") {
       tokens.push(token(src[0], Tokentype.Equals));
+      src.shift();
+    } else if (src[0] === ".") {
+      tokens.push(token(src[0], Tokentype.Dot));
       src.shift();
     } else if (src[0] === ";") {
       tokens.push(token(src[0], Tokentype.Semicolon));
