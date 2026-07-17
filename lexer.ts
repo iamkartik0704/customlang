@@ -25,6 +25,11 @@ export enum Tokentype {
   OpenSquare,
   CloseSquare,
   Dot,
+  Return,
+  If,
+  Else,
+  While,
+  For,
 }
 /*
 
@@ -38,7 +43,12 @@ const KEYWORDS: Record<string, Tokentype> = {
   let: Tokentype.Let,
   Null: Tokentype.Null,
   const: Tokentype.const,
-  fn:Tokentype.Fn,
+  fn: Tokentype.Fn,
+  return: Tokentype.Return,
+  if: Tokentype.If,
+  else: Tokentype.Else,
+  while: Tokentype.While,
+  for: Tokentype.For,
 };
 
 // interface is TS is what struct in Cpp
@@ -106,11 +116,47 @@ export function tokenize(sourceCode: string): Token[] {
       src[0] === "/" ||
       src[0] === "%"
     ) {
-      tokens.push(token(src[0], Tokentype.BinaryOperators));
-      src.shift();
+      tokens.push(token(src.shift() as string, Tokentype.BinaryOperators));
     } else if (src[0] === "=") {
-      tokens.push(token(src[0], Tokentype.Equals));
+      if (src.length > 1 && src[1] === "=") {
+        src.shift();
+        src.shift();
+        tokens.push(token("==", Tokentype.BinaryOperators));
+      } else {
+        tokens.push(token(src.shift() as string, Tokentype.Equals));
+      }
+    } else if (src[0] === "!") {
+      if (src.length > 1 && src[1] === "=") {
+        src.shift();
+        src.shift();
+        tokens.push(token("!=", Tokentype.BinaryOperators));
+      } else {
+        tokens.push(token(src.shift() as string, Tokentype.BinaryOperators)); // Treat standalone '!' as an operator (Unary Not)
+      }
+    } else if (src[0] === "<") {
+      if (src.length > 1 && src[1] === "=") {
+        src.shift();
+        src.shift();
+        tokens.push(token("<=", Tokentype.BinaryOperators));
+      } else {
+        tokens.push(token(src.shift() as string, Tokentype.BinaryOperators));
+      }
+    } else if (src[0] === ">") {
+      if (src.length > 1 && src[1] === "=") {
+        src.shift();
+        src.shift();
+        tokens.push(token(">=", Tokentype.BinaryOperators));
+      } else {
+        tokens.push(token(src.shift() as string, Tokentype.BinaryOperators));
+      }
+    } else if (src[0] === "&" && src.length > 1 && src[1] === "&") {
       src.shift();
+      src.shift();
+      tokens.push(token("&&", Tokentype.BinaryOperators));
+    } else if (src[0] === "|" && src.length > 1 && src[1] === "|") {
+      src.shift();
+      src.shift();
+      tokens.push(token("||", Tokentype.BinaryOperators));
     } else if (src[0] === ".") {
       tokens.push(token(src[0], Tokentype.Dot));
       src.shift();

@@ -14,6 +14,11 @@ import {
   CallExpr,
   MemberExpr,
   FunctionDeclaration,
+  ReturnStatement,
+  IfStatement,
+  WhileStatement,
+  ForStatement,
+  ArrayLiteral,
 } from "./ast";
 
 export default class Parser {
@@ -30,6 +35,14 @@ export default class Parser {
         return this.parseVarDeclartion();
       case Tokentype.Fn:
         return this.parseFnDeclaration();
+      case Tokentype.Return:
+        return this.parseReturnStatement();
+      case Tokentype.If:
+        return this.parseIfStatement();
+      case Tokentype.While:
+        return this.parseWhileStatement();
+      case Tokentype.For:
+        return this.parseForStatement();
       default: {
         const expr = this.parseExp();
         if (this.at().type == Tokentype.Semicolon) {
@@ -68,6 +81,85 @@ export default class Parser {
     } as FunctionDeclaration;
     return fn;
   }
+
+  private parseReturnStatement(): Stmt {
+    this.eat(); // advance past 'return'
+    let value: Expr | undefined;
+    if (this.at().type !== Tokentype.Semicolon) {
+      value = this.parseExp();
+    }
+    this.expect(Tokentype.Semicolon, "Return statement must end with a semicolon");
+    return { kind: "ReturnStatement", value } as ReturnStatement;
+  }
+
+  private parseIfStatement(): Stmt {
+    this.eat(); // past 'if'
+    this.expect(Tokentype.OpenParens, "Expected '(' after 'if'");
+    const condition = this.parseExp();
+    this.expect(Tokentype.CloseParens, "Expected ')' after if condition");
+    
+    this.expect(Tokentype.OpenBrace, "Expected '{' for if block");
+    const body: Stmt[] = [];
+    while (this.notEOF() && this.at().type !== Tokentype.CloseBrace) {
+      body.push(this.parseSMT());
+    }
+    this.expect(Tokentype.CloseBrace, "Expected '}' after if block");
+
+    let alternate: Stmt[] | IfStatement | undefined;
+    if (this.at().type === Tokentype.Else) {
+      this.eat(); // past 'else'
+      if (this.at().type === Tokentype.If) {
+        alternate = this.parseIfStatement() as IfStatement;
+      } else {
+        this.expect(Tokentype.OpenBrace, "Expected '{' for else block");
+        alternate = [];
+        while (this.notEOF() && this.at().type !== Tokentype.CloseBrace) {
+          alternate.push(this.parseSMT());
+        }
+        this.expect(Tokentype.CloseBrace, "Expected '}' after else block");
+      }
+    }
+
+    return { kind: "IfStatement", condition, body, alternate } as IfStatement;
+  }
+
+  private parseWhileStatement(): Stmt {
+    this.eat();
+    this.expect(Tokentype.OpenParens, "Expected '(' after 'while'");
+    const condition = this.parseExp();
+    this.expect(Tokentype.CloseParens, "Expected ')' after while condition");
+    
+    this.expect(Tokentype.OpenBrace, "Expected '{' for while block");
+    const body: Stmt[] = [];
+    while (this.notEOF() && this.at().type !== Tokentype.CloseBrace) {
+      body.push(this.parseSMT());
+    }
+    this.expect(Tokentype.CloseBrace, "Expected '}' after while block");
+    return { kind: "WhileStatement", condition, body } as WhileStatement;
+  }
+
+  private parseForStatement(): Stmt {
+    this.eat(); // past 'for'
+    this.expect(Tokentype.OpenParens, "Expected '(' after 'for'");
+    
+    const init = this.parseVarDeclartion() as varDeclaration; // expects a semicolon inside
+    
+    const condition = this.parseExp();
+    this.expect(Tokentype.Semicolon, "Expected ';' after for loop condition");
+    
+    const update = this.parseAssignmentExpr();
+    this.expect(Tokentype.CloseParens, "Expected ')' after for loop update");
+    
+    this.expect(Tokentype.OpenBrace, "Expected '{' for for loop block");
+    const body: Stmt[] = [];
+    while (this.notEOF() && this.at().type !== Tokentype.CloseBrace) {
+      body.push(this.parseSMT());
+    }
+    this.expect(Tokentype.CloseBrace, "Expected '}' after for block");
+    
+    return { kind: "ForStatement", init, condition, update, body } as ForStatement;
+  }
+
   // LET identifier;        // only declaration
   // (let||const) identifier = Expr;       // assignment along with declaration
   private parseVarDeclartion(): Stmt {
@@ -124,7 +216,7 @@ export default class Parser {
   }
   private parseObjectExpr(): Expr {
     if (this.at().type !== Tokentype.OpenBrace) {
-      return this.parsePAdditiveExpr();
+      return this.parseLogicalExpr();
     }
     this.eat(); // advance past openBrace
     const properties = new Array<Property>();
@@ -177,6 +269,30 @@ export default class Parser {
       );
     }
     return prev;
+  }
+
+  private parseLogicalExpr(): Expr {
+    let left = this.parseComparisonExpr();
+    while (this.at().value == "&&" || this.at().value == "||") {
+      const operator = this.eat().value;
+      const right = this.parseComparisonExpr();
+      left = { kind: "BinaryExp", left, right, operator } as BinaryExp;
+    }
+    return left;
+  }
+
+  private parseComparisonExpr(): Expr {
+    let left = this.parsePAdditiveExpr();
+    while (
+      this.at().value == "==" || this.at().value == "!=" ||
+      this.at().value == "<" || this.at().value == ">" ||
+      this.at().value == "<=" || this.at().value == ">="
+    ) {
+      const operator = this.eat().value;
+      const right = this.parsePAdditiveExpr();
+      left = { kind: "BinaryExp", left, right, operator } as BinaryExp;
+    }
+    return left;
   }
 
   // (10+5) - 5
@@ -311,6 +427,19 @@ export default class Parser {
       case Tokentype.Null:
         this.eat(); // advance past the null literal
         return { kind: "NullLiteral", value: "null" } as NullLiteral;
+
+      case Tokentype.OpenSquare: {
+        this.eat(); // advance past [
+        const elements = [];
+        if (this.at().type !== Tokentype.CloseSquare) {
+           elements.push(this.parseAssignmentExpr());
+           while (this.at().type === Tokentype.Comma && this.eat()) {
+             elements.push(this.parseAssignmentExpr());
+           }
+        }
+        this.expect(Tokentype.CloseSquare, "Expected ']' at the end of array literal");
+        return { kind: "ArrayLiteral", elements } as ArrayLiteral;
+      }
 
       default:
         throw new Error(

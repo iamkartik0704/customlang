@@ -6,12 +6,17 @@ export type NodeType =
   | "Program"
   | "varDeclaration"
   | "FunctionDeclaration"
+  | "ReturnStatement"
+  | "IfStatement"
+  | "WhileStatement"
+  | "ForStatement"
 
   //   expressions
   | "MemberExpr"
   | "CallExpr"
   | "Property"
   | "ObjectLiteral" // object is an array of properties
+  | "ArrayLiteral"
   | "AssignmentExpr"
   | "BinaryExp"
   | "NumericLiteral"
@@ -40,7 +45,32 @@ export interface FunctionDeclaration extends Stmt {
   name:string;
   body:Stmt[];
   // can add async and arrow keys as bool here 
+}
 
+export interface ReturnStatement extends Stmt {
+  kind: "ReturnStatement";
+  value?: Expr;
+}
+
+export interface IfStatement extends Stmt {
+  kind: "IfStatement";
+  condition: Expr;
+  body: Stmt[];
+  alternate?: Stmt[] | IfStatement;
+}
+
+export interface WhileStatement extends Stmt {
+  kind: "WhileStatement";
+  condition: Expr;
+  body: Stmt[];
+}
+
+export interface ForStatement extends Stmt {
+  kind: "ForStatement";
+  init: varDeclaration;
+  condition: Expr;
+  update: Expr;
+  body: Stmt[];
 }
 
 export interface Expr extends Stmt {}
@@ -106,4 +136,9 @@ export interface Property extends Expr {
 export interface ObjectLiteral extends Expr {
   kind: "ObjectLiteral";
   properties: Property[];
+}
+
+export interface ArrayLiteral extends Expr {
+  kind: "ArrayLiteral";
+  elements: Expr[];
 }

@@ -1,6 +1,6 @@
 import env from "./env"
 import { Stmt } from "./ast";
-export type ValueType = "null" | "number" | "boolean" | "object" |"native-fn" | "function";
+export type ValueType = "null" | "number" | "boolean" | "object" |"native-fn" | "function" | "return" | "array";
 
 export interface runtimeVal{
     type:ValueType;
@@ -55,4 +55,14 @@ export interface FunctionValue extends runtimeVal{
     parameters:string[];
     declarationEnv:env;
     body:Stmt[];
+}
+
+export interface ReturnVal extends runtimeVal {
+    type: "return";
+    value: runtimeVal;
+}
+
+export interface ArrayVal extends runtimeVal {
+    type: "array";
+    elements: runtimeVal[];
 }

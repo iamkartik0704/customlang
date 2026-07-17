@@ -1,4 +1,4 @@
-import { makeNull, NativeFnValue, NullVal, NumberVal, ObjectVal, runtimeVal, ValueType, FunctionValue } from "./values";
+import { makeNull, NativeFnValue, NullVal, NumberVal, ObjectVal, runtimeVal, ValueType, FunctionValue, ArrayVal, ReturnVal, booleanVal, makeBoolean } from "./values";
 import {
   AssignmentExpr,
   BinaryExp,
@@ -11,6 +11,11 @@ import {
   Stmt,
   varDeclaration,
   FunctionDeclaration,
+  ReturnStatement,
+  IfStatement,
+  WhileStatement,
+  ForStatement,
+  ArrayLiteral,
 } from "./ast";
 import Environment from "./env";
 type env = Environment;
@@ -20,6 +25,9 @@ function evaluateProgram(program: Program, env: env): runtimeVal {
 
   for (const statement of program.body) {
     lastEvaluated = evaluate(statement, env);
+    if (lastEvaluated.type === "return") {
+      return (lastEvaluated as ReturnVal).value;
+    }
   }
   return lastEvaluated;
 }
@@ -50,19 +58,48 @@ function evaluateNumericBinaryExpr(
 }
 function evaluateBinaryExp(binop: BinaryExp, env: env): runtimeVal {
   const lhs = evaluate(binop.left, env);
+
+  if (binop.operator === "&&") {
+      const isLhsTruthy = lhs.type === "boolean" ? (lhs as booleanVal).value : true;
+      if (!isLhsTruthy) return makeBoolean(false);
+      const rhs = evaluate(binop.right, env);
+      const isRhsTruthy = rhs.type === "boolean" ? (rhs as booleanVal).value : true;
+      return makeBoolean(isRhsTruthy);
+  }
+  if (binop.operator === "||") {
+      const isLhsTruthy = lhs.type === "boolean" ? (lhs as booleanVal).value : true;
+      if (isLhsTruthy) return makeBoolean(true);
+      const rhs = evaluate(binop.right, env);
+      const isRhsTruthy = rhs.type === "boolean" ? (rhs as booleanVal).value : true;
+      return makeBoolean(isRhsTruthy);
+  }
+
   const rhs = evaluate(binop.right, env);
 
   if (lhs.type == "number" && rhs.type == "number") {
+    if (binop.operator === "==") return makeBoolean((lhs as NumberVal).value == (rhs as NumberVal).value);
+    if (binop.operator === "!=") return makeBoolean((lhs as NumberVal).value != (rhs as NumberVal).value);
+    if (binop.operator === "<") return makeBoolean((lhs as NumberVal).value < (rhs as NumberVal).value);
+    if (binop.operator === ">") return makeBoolean((lhs as NumberVal).value > (rhs as NumberVal).value);
+    if (binop.operator === "<=") return makeBoolean((lhs as NumberVal).value <= (rhs as NumberVal).value);
+    if (binop.operator === ">=") return makeBoolean((lhs as NumberVal).value >= (rhs as NumberVal).value);
+    
     return evaluateNumericBinaryExpr(
       lhs as NumberVal,
       rhs as NumberVal,
       binop.operator,
     );
   }
-  // if any or both are null
-  else {
-    return makeNull();
+
+  if (binop.operator === "==") {
+      return makeBoolean((lhs as any).value === (rhs as any).value);
   }
+  if (binop.operator === "!=") {
+      return makeBoolean((lhs as any).value !== (rhs as any).value);
+  }
+
+  // if any or both are null
+  return makeNull();
 }
 
 function evaluateIdentifier(ident: Identifier, env: env) {
@@ -100,6 +137,82 @@ function evaluateFunctionDeclaration(declaration: FunctionDeclaration, env: env)
   } as FunctionValue;
 
   return env.declareVar(declaration.name, fn, true);
+}
+
+function evaluateReturnStatement(stmt: ReturnStatement, env: env): runtimeVal {
+  const value = stmt.value ? evaluate(stmt.value, env) : makeNull();
+  return { type: "return", value } as ReturnVal;
+}
+
+function evaluateIfStatement(stmt: IfStatement, env: env): runtimeVal {
+  const condition = evaluate(stmt.condition, env);
+  const isTrue = condition.type === "boolean" ? (condition as booleanVal).value : true;
+
+  if (isTrue) {
+    const scope = new Environment(env);
+    let last: runtimeVal = makeNull();
+    for (const bodyStmt of stmt.body) {
+      last = evaluate(bodyStmt, scope);
+      if (last.type === "return") return last;
+    }
+    return last;
+  } else if (stmt.alternate) {
+    if (Array.isArray(stmt.alternate)) {
+      const scope = new Environment(env);
+      let last: runtimeVal = makeNull();
+      for (const bodyStmt of stmt.alternate) {
+        last = evaluate(bodyStmt, scope);
+        if (last.type === "return") return last;
+      }
+      return last;
+    } else {
+      return evaluateIfStatement(stmt.alternate as IfStatement, env);
+    }
+  }
+  return makeNull();
+}
+
+function evaluateWhileStatement(stmt: WhileStatement, env: env): runtimeVal {
+  let last: runtimeVal = makeNull();
+  while (true) {
+    const condition = evaluate(stmt.condition, env);
+    const isTrue = condition.type === "boolean" ? (condition as booleanVal).value : true;
+    if (!isTrue) break;
+    
+    const scope = new Environment(env);
+    for (const bodyStmt of stmt.body) {
+      last = evaluate(bodyStmt, scope);
+      if (last.type === "return") return last; // Bubble up
+    }
+  }
+  return last;
+}
+
+function evaluateForStatement(stmt: ForStatement, env: env): runtimeVal {
+  let last: runtimeVal = makeNull();
+  const loopScope = new Environment(env);
+  
+  evaluate(stmt.init, loopScope);
+
+  while (true) {
+    const condition = evaluate(stmt.condition, loopScope);
+    const isTrue = condition.type === "boolean" ? (condition as booleanVal).value : true;
+    if (!isTrue) break;
+    
+    const bodyScope = new Environment(loopScope);
+    for (const bodyStmt of stmt.body) {
+      last = evaluate(bodyStmt, bodyScope);
+      if (last.type === "return") return last; // Bubble up
+    }
+
+    evaluate(stmt.update, loopScope);
+  }
+  return last;
+}
+
+function evaluateArrayLiteral(node: ArrayLiteral, env: env): runtimeVal {
+    const elements = node.elements.map(el => evaluate(el, env));
+    return { type: "array", elements } as ArrayVal;
 }
 
 function evaluateObject(obj: ObjectLiteral, env: env): runtimeVal {
@@ -141,6 +254,9 @@ function evaluateCallExpr(expr:CallExpr , env:env):runtimeVal{
     // Evaluate the function body
     for (const stmt of func.body) {
         result = evaluate(stmt, scope);
+        if (result.type === "return") {
+            return (result as ReturnVal).value;
+        }
     }
 
     return result;
@@ -175,6 +291,16 @@ export function evaluate(astNode: Stmt, env: env): runtimeVal {
       return evaluateVarDeclaration(astNode as varDeclaration, env);
     case "FunctionDeclaration":
       return evaluateFunctionDeclaration(astNode as FunctionDeclaration, env);
+    case "ReturnStatement":
+      return evaluateReturnStatement(astNode as ReturnStatement, env);
+    case "IfStatement":
+      return evaluateIfStatement(astNode as IfStatement, env);
+    case "WhileStatement":
+      return evaluateWhileStatement(astNode as WhileStatement, env);
+    case "ForStatement":
+      return evaluateForStatement(astNode as ForStatement, env);
+    case "ArrayLiteral":
+      return evaluateArrayLiteral(astNode as ArrayLiteral, env);
     default:
       throw new Error(
         `This AST node has not been set for interpretation! ${JSON.stringify(astNode)}`,
