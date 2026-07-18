@@ -1,0 +1,9 @@
+let alpha = 300;
+const obj = {
+    x:100,
+    y:200,
+    alpha,
+    beta:{
+        toadCode:true,
+    },
+};

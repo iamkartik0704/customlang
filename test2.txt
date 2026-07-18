@@ -1,0 +1,15 @@
+let alpha = 300;
+const obj = {
+    x:100,
+    y:200,
+    alpha,
+    beta:{
+        toadCode:true,
+    },
+};
+obj
+
+toad(45 , alpha/3)
+
+const timeNow = time();
+toad(timeNow)

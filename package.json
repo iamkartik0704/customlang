@@ -1,0 +1,30 @@
+{
+  "name": "toadcode",
+  "version": "1.0.0",
+  "description": "ToadCode is a custom, dynamically typed toy programming language built entirely from scratch in TypeScript. It includes a custom lexer, parser, and tree-walk interpreter.",
+  "main": "dist/main.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamkartik0704/customlang.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iamkartik0704/customlang/issues"
+  },
+  "homepage": "https://github.com/iamkartik0704/customlang#readme",
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2"
+  },
+  "bin": {
+    "toadcode": "./dist/main.js"
+  }
+}

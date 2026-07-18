@@ -1,0 +1,7 @@
+fn add(x,y){
+    const result = x+y;
+    toad(result);
+    
+}
+
+add(3,5);

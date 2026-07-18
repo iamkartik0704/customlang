@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import Parser from "./parser";
 import { evaluate } from "./interpreter";
 import env, { createGlobalEnv } from "./env";
