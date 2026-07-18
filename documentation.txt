@@ -1,0 +1,150 @@
+ToadCode Complete Documentation
+
+Welcome to ToadCode! ToadCode is a lightweight, dynamically typed programming language.
+This document will teach you how to use ToadCode from scratch.
+
+---------------------------------------------------------
+1. Installation & Running
+---------------------------------------------------------
+
+Since you have installed ToadCode via npm, you can use the `toadcode` command globally.
+
+To run the interactive REPL (Read-Eval-Print Loop), simply type:
+$ toadcode
+
+To run a specific ToadCode script file, pass the filename as an argument:
+$ toadcode my_script.txt
+
+---------------------------------------------------------
+2. Variables
+---------------------------------------------------------
+
+ToadCode supports two types of variable declarations: `let` for mutable variables and `const` for immutable variables.
+
+let x = 10;
+x = 20; // This is allowed
+
+const y = 50;
+// y = 60; // This will throw an error!
+
+---------------------------------------------------------
+3. Data Types
+---------------------------------------------------------
+
+ToadCode supports the following basic data types:
+
+- Numbers: 10, -5, 3.14
+- Booleans: true, false
+- Null: null
+
+---------------------------------------------------------
+4. Data Structures
+---------------------------------------------------------
+
+You can group data together using Arrays and Objects.
+
+Arrays:
+let my_array = [1, 2, 3, 4];
+
+Objects (JSON-like syntax):
+let person = {
+    name: "Toad",
+    age: 5,
+    is_frog: false
+};
+
+---------------------------------------------------------
+5. Operators
+---------------------------------------------------------
+
+Math Operators:
++, -, *, /, % (modulo)
+
+Comparison Operators:
+== (equal)
+!= (not equal)
+<  (less than)
+>  (greater than)
+<= (less than or equal)
+>= (greater than or equal)
+
+Logical Operators:
+&& (AND)
+|| (OR)
+
+---------------------------------------------------------
+6. Control Flow (If / Else)
+---------------------------------------------------------
+
+You can use `if` and `else` statements to run code conditionally.
+
+let a = 10;
+let b = 20;
+
+if (a < b && b == 20) {
+    toad(1);
+} else {
+    toad(0);
+}
+
+---------------------------------------------------------
+7. Loops (For and While)
+---------------------------------------------------------
+
+ToadCode supports standard `for` and `while` loops for iterating.
+
+While Loop:
+let count = 0;
+while (count < 5) {
+    count = count + 1;
+}
+toad(count);
+
+For Loop:
+let sum = 0;
+for (let i = 0; i < 5; i = i + 1) {
+    sum = sum + i;
+}
+toad(sum);
+
+---------------------------------------------------------
+8. Functions
+---------------------------------------------------------
+
+You can define your own functions using the `fn` keyword. Functions can return values using the `return` keyword.
+
+fn add(x, y) {
+    return x + y;
+}
+
+let result = add(10, 5);
+toad(result); // prints 15
+
+ToadCode fully supports recursion!
+
+fn fib(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+toad(fib(6)); // prints 8
+
+---------------------------------------------------------
+9. Built-in Native Functions
+---------------------------------------------------------
+
+ToadCode comes with a few built-in functions natively:
+
+- `toad(value)` : Prints the given value to the terminal (just like console.log).
+- `time()` : Returns the current system time in milliseconds.
+
+Example:
+let start = time();
+// ... do some heavy loops ...
+let end = time();
+toad(end - start);
+
+---------------------------------------------------------
+Congratulations! You now know everything you need to start writing scripts in ToadCode!
