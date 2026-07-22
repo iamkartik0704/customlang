@@ -7,7 +7,7 @@ export function createGlobalEnv() {
   environment.declareVar("true", makeBoolean(true), true);
   environment.declareVar("toad",
     makeNativeFn((args, scope) => {
-      console.log(...args);
+      console.log(...args.map(arg => (arg as any).value ?? arg));
       return makeNull();
     }),
     true);

@@ -19,13 +19,6 @@ function runFile(filename: string) {
         const input = fs.readFileSync(filename, "utf-8");
         const program = parser.produceAST(input);
         const result = evaluate(program, environment);
-        // Print the result with depth: null to see the whole object structure
-        
-        
-        
-        console.dir(result, { depth: null });
-
-
 
     } catch (error: any) {
         console.error(error.message);

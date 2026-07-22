@@ -8,12 +8,22 @@ I built this project to understand how programming languages work under the hood
 
 Even though it's a toy language, it supports a decent amount of features:
 - **Variables**: `let` for mutable variables and `const` for immutable ones.
-- **Data Types**: Numbers, Booleans, Null.
+- **Data Types**: Numbers, Strings, Booleans, Null.
 - **Data Structures**: Objects (JSON-like) and Arrays.
-- **Functions**: User-defined functions and native functions (like `toad()` for printing).
+- **Functions**: Named functions (`fn`), Arrow functions (`=>`), and native functions (like `toad()`, `time()`).
 - **Control Flow**: `if` / `else` statements.
 - **Loops**: `for` and `while` loops.
-- **Math & Logic**: Standard math operators (`+`, `-`, `*`, `/`, `%`) and logical/comparison operators (`&&`, `||`, `==`, `!=`, `<`, `>`, `<=`, `>=`).
+- **Math & Logic**: Standard math operators (`+`, `-`, `*`, `/`, `%`), logical/comparison operators (`==`, `!=`, `<`, `>`, `<=`, `>=`), and unary operators (`!`, `-`).
+- **Methods**: Array and String methods (`.length`, `.push()`, `.pop()`, `.split()`).
+
+## Reserved Keywords
+
+The following keywords are reserved in ToadCode and cannot be used as identifiers (variable or function names):
+- `let`, `const`
+- `fn`, `return`
+- `if`, `else`
+- `while`, `for`
+- `true`, `false`, `null`
 
 ## Getting Started
 
@@ -69,8 +79,9 @@ while (count < 3) {
 ```
 
 ### Functions
-Functions support returning values and recursion.
+Functions support returning values, recursion, and arrow function syntax.
 ```javascript
+// Named Function
 fn fib(n) {
     if (n <= 1) {
         return n;
@@ -78,7 +89,21 @@ fn fib(n) {
     return fib(n - 1) + fib(n - 2);
 }
 
+// Arrow Function
+let multiply = (a, b) => a * b;
+
 toad(fib(6)); // prints 8
+```
+
+### Methods & Member Expressions
+ToadCode has built-in support for array and string manipulations:
+```javascript
+let arr = [1, 2, 3];
+arr.push(4);
+toad(arr.length); // 4
+
+let str = "hello world";
+let parts = str.split(" "); // ["hello", "world"]
 ```
 
 ## How it works

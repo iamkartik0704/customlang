@@ -1,4 +1,4 @@
-// this works as the grammar for the language
+  // this works as the grammar for the language
 
 // TypeScript String Literal Union.
 export type NodeType =
@@ -20,7 +20,9 @@ export type NodeType =
   | "AssignmentExpr"
   | "BinaryExp"
   | "NumericLiteral"
+  | "StringLiteral"
   | "Identifier"
+  | "UnaryExpr"
   | "NullLiteral";
 // we can aslo include functionDeclaration,unaryExpression,callExpression
 
@@ -39,7 +41,7 @@ export interface varDeclaration extends Stmt {
   identifier: string;
 }
 
-export interface FunctionDeclaration extends Stmt {
+export interface FunctionDeclaration extends Expr {
   kind: "FunctionDeclaration";
   parameters:string[];
   name:string;
@@ -88,6 +90,12 @@ export interface AssignmentExpr extends Expr {
   value: Expr;
 }
 
+export interface UnaryExpr extends Expr {
+  kind: "UnaryExpr";
+  operator: string;
+  argument: Expr;
+}
+
 export interface BinaryExp extends Expr {
   kind: "BinaryExp";
   left: Expr;
@@ -115,6 +123,11 @@ export interface MemberExpr extends Expr {
 export interface NumericLiteral extends Expr {
   kind: "NumericLiteral";
   value: number;
+}
+
+export interface StringLiteral extends Expr {
+  kind: "StringLiteral";
+  value: string;
 }
 
 export interface Identifier extends Expr {

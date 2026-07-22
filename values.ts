@@ -1,6 +1,6 @@
 import env from "./env"
 import { Stmt } from "./ast";
-export type ValueType = "null" | "number" | "boolean" | "object" |"native-fn" | "function" | "return" | "array";
+export type ValueType = "null" | "number" | "string" | "boolean" | "object" |"native-fn" | "function" | "return" | "array";
 
 export interface runtimeVal{
     type:ValueType;
@@ -20,6 +20,14 @@ export function makeNumber(n=0){
     return {type:"number" , value:n} as NumberVal;
 }
 
+export interface StringVal extends runtimeVal{
+    type:"string";
+    value:string;
+}
+
+export function makeString(s=""){
+    return {type:"string" , value:s} as StringVal;
+}
 
 export interface booleanVal extends runtimeVal{
     type:"boolean";

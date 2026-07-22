@@ -1,0 +1,23 @@
+// 1. Unary Operators
+let isTrue = !false;
+let negative = -5;
+toad("!false:", isTrue, "-5:", negative);
+
+// 2. Member Expr & Array Methods
+let arr = [1, 2, 3];
+toad("Original array length:", arr.length);
+arr.push(4);
+toad("Array after push:", arr[3], "New length:", arr.length);
+arr.pop();
+
+// 3. String Methods
+let str = "hello world";
+toad("String length:", str.length);
+let parts = str.split(" ");
+toad("First part:", parts[0], "Second part:", parts[1]);
+
+// 4. Arrow Functions
+let add = (x, y) => x + y;
+let square = (x) => { return x * x; };
+toad("Arrow function add(3, 4):", add(3, 4));
+toad("Arrow function square(5):", square(5));

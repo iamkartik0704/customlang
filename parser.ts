@@ -19,6 +19,8 @@ import {
   WhileStatement,
   ForStatement,
   ArrayLiteral,
+  UnaryExpr,
+  StringLiteral,
 } from "./ast";
 
 export default class Parser {
@@ -52,7 +54,7 @@ export default class Parser {
       }
     }
   }
-  private parseFnDeclaration(): Stmt {
+  private parseFnDeclaration(): Expr {
     this.eat();
     const name = this.expect(
       Tokentype.Identifier,
@@ -80,6 +82,38 @@ export default class Parser {
       name,body,parameters:params,kind:"FunctionDeclaration"
     } as FunctionDeclaration;
     return fn;
+  }
+
+  private parseArrowFunction(): Expr {
+    this.eat(); // consume '('
+    const parameters = [];
+    if (this.at().type !== Tokentype.CloseParens) {
+      parameters.push(this.expect(Tokentype.Identifier, "Expected parameter name").value);
+      while (this.at().type === Tokentype.Comma && this.eat()) {
+        parameters.push(this.expect(Tokentype.Identifier, "Expected parameter name").value);
+      }
+    }
+    this.expect(Tokentype.CloseParens, "Expected closing parenthesis for arrow function parameters");
+    this.expect(Tokentype.Arrow, "Expected => for arrow function");
+
+    let body: Stmt[] = [];
+    if (this.at().type === Tokentype.OpenBrace) {
+      this.eat(); // consume '{'
+      while (this.at().type !== Tokentype.EOF && this.at().type !== Tokentype.CloseBrace) {
+        body.push(this.parseSMT());
+      }
+      this.expect(Tokentype.CloseBrace, "Expected closing brace for arrow function body");
+    } else {
+      const expr = this.parseExp();
+      body = [{ kind: "ReturnStatement", value: expr } as ReturnStatement];
+    }
+
+    return {
+      kind: "FunctionDeclaration",
+      name: "anonymous",
+      parameters,
+      body,
+    } as FunctionDeclaration;
   }
 
   private parseReturnStatement(): Stmt {
@@ -314,7 +348,7 @@ export default class Parser {
     return left;
   }
   private parseMultiplicativeExpr(): Expr {
-    let left = this.parseCallMemberExpr();
+    let left = this.parseUnaryExpr();
     // we will give this.parseCallMemberExpr() more precedence than multiplication but less than parsePrimaryExpr()
 
     while (
@@ -323,7 +357,7 @@ export default class Parser {
       this.at().value == "%"
     ) {
       const operator = this.eat().value;
-      const right = this.parseCallMemberExpr();
+      const right = this.parseUnaryExpr();
 
       left = {
         kind: "BinaryExp",
@@ -334,6 +368,20 @@ export default class Parser {
     }
     return left;
   }
+  
+  private parseUnaryExpr(): Expr {
+    if (this.at().value === "!" || this.at().value === "-") {
+      const operator = this.eat().value;
+      const argument = this.parseUnaryExpr(); // recurse for !!x or - -x
+      return {
+        kind: "UnaryExpr",
+        operator,
+        argument,
+      } as UnaryExpr;
+    }
+    return this.parseCallMemberExpr();
+  }
+
   // print.x()().y
   private parseCallMemberExpr(): Expr {
     let object = this.parsePrimaryExpr();
@@ -414,7 +462,27 @@ export default class Parser {
         } as NumericLiteral;
       // parseFloat provides the support for floating numbers as well
 
+      case Tokentype.String:
+        return {
+          kind: "StringLiteral",
+          value: this.eat().value,
+        } as StringLiteral;
+
       case Tokentype.OpenParens: {
+        let isArrow = false;
+        for (let i = 0; i < this.tokens.length; i++) {
+          if (this.tokens[i].type === Tokentype.Arrow) {
+            isArrow = true;
+            break;
+          }
+          if (this.tokens[i].type === Tokentype.OpenBrace || this.tokens[i].type === Tokentype.Semicolon || this.tokens[i].type === Tokentype.EOF) {
+            break;
+          }
+        }
+        if (isArrow) {
+          return this.parseArrowFunction();
+        }
+
         this.eat(); // for opening param
         const value = this.parseExp();
         this.expect(
@@ -427,6 +495,9 @@ export default class Parser {
       case Tokentype.Null:
         this.eat(); // advance past the null literal
         return { kind: "NullLiteral", value: "null" } as NullLiteral;
+
+      case Tokentype.Fn:
+        return this.parseFnDeclaration();
 
       case Tokentype.OpenSquare: {
         this.eat(); // advance past [

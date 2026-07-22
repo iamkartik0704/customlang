@@ -1,4 +1,4 @@
-import { makeNull, NativeFnValue, NullVal, NumberVal, ObjectVal, runtimeVal, ValueType, FunctionValue, ArrayVal, ReturnVal, booleanVal, makeBoolean } from "./values";
+import { makeNull, NativeFnValue, NullVal, NumberVal, ObjectVal, runtimeVal, ValueType, FunctionValue, ArrayVal, ReturnVal, booleanVal, makeBoolean, StringVal, makeString, makeNumber, makeNativeFn } from "./values";
 import {
   AssignmentExpr,
   BinaryExp,
@@ -6,6 +6,7 @@ import {
   Identifier,
   NodeType,
   NumericLiteral,
+  StringLiteral,
   ObjectLiteral,
   Program,
   Stmt,
@@ -16,6 +17,8 @@ import {
   WhileStatement,
   ForStatement,
   ArrayLiteral,
+  UnaryExpr,
+  MemberExpr,
 } from "./ast";
 import Environment from "./env";
 type env = Environment;
@@ -56,6 +59,26 @@ function evaluateNumericBinaryExpr(
 
   return { value: result, type: "number" };
 }
+function evaluateUnaryExpr(unary: UnaryExpr, env: env): runtimeVal {
+  const arg = evaluate(unary.argument, env);
+
+  if (unary.operator === "!") {
+    if (arg.type === "boolean") {
+      return makeBoolean(!(arg as booleanVal).value);
+    }
+    return makeBoolean(!arg);
+  }
+
+  if (unary.operator === "-") {
+    if (arg.type === "number") {
+      return { type: "number", value: -(arg as NumberVal).value } as NumberVal;
+    }
+    throw new Error(`Cannot negate non-numeric type`);
+  }
+
+  throw new Error(`Unknown unary operator ${unary.operator}`);
+}
+
 function evaluateBinaryExp(binop: BinaryExp, env: env): runtimeVal {
   const lhs = evaluate(binop.left, env);
 
@@ -91,10 +114,24 @@ function evaluateBinaryExp(binop: BinaryExp, env: env): runtimeVal {
     );
   }
 
+  if (lhs.type == "string" && rhs.type == "string") {
+    if (binop.operator === "==") return makeBoolean((lhs as StringVal).value == (rhs as StringVal).value);
+    if (binop.operator === "!=") return makeBoolean((lhs as StringVal).value != (rhs as StringVal).value);
+    if (binop.operator === "+") return makeString((lhs as StringVal).value + (rhs as StringVal).value);
+  }
+
   if (binop.operator === "==") {
+      if (lhs.type !== rhs.type) return makeBoolean(false);
+      if (lhs.type === "object" || lhs.type === "function" || lhs.type === "native-fn" || lhs.type === "array") {
+          return makeBoolean(lhs === rhs);
+      }
       return makeBoolean((lhs as any).value === (rhs as any).value);
   }
   if (binop.operator === "!=") {
+      if (lhs.type !== rhs.type) return makeBoolean(true);
+      if (lhs.type === "object" || lhs.type === "function" || lhs.type === "native-fn" || lhs.type === "array") {
+          return makeBoolean(lhs !== rhs);
+      }
       return makeBoolean((lhs as any).value !== (rhs as any).value);
   }
 
@@ -136,6 +173,9 @@ function evaluateFunctionDeclaration(declaration: FunctionDeclaration, env: env)
     body: declaration.body,
   } as FunctionValue;
 
+  if (declaration.name === "anonymous") {
+    return fn;
+  }
   return env.declareVar(declaration.name, fn, true);
 }
 
@@ -265,6 +305,67 @@ function evaluateCallExpr(expr:CallExpr , env:env):runtimeVal{
   throw new Error(`Cannot call a value that is not a function ${JSON.stringify(fn)}`);
 }
 
+function evaluateMemberExpr(expr: MemberExpr, env: env): runtimeVal {
+  const object = evaluate(expr.object, env);
+  
+  let propName: string | number;
+  if (expr.computed) {
+    const prop = evaluate(expr.property, env);
+    if (prop.type !== "string" && prop.type !== "number") {
+        throw new Error(`Computed property must be string or number, got ${prop.type}`);
+    }
+    propName = (prop as any).value;
+  } else {
+    propName = (expr.property as Identifier).symbol;
+  }
+
+  if (object.type === "object") {
+    const obj = object as ObjectVal;
+    if (obj.properties[propName] !== undefined) {
+      return obj.properties[propName];
+    }
+    return makeNull();
+  }
+
+  if (object.type === "array") {
+    const arr = object as ArrayVal;
+    if (propName === "length") return makeNumber(arr.elements.length);
+    if (propName === "push") {
+      return makeNativeFn((args: runtimeVal[], scope: env) => {
+        arr.elements.push(...args);
+        return makeNumber(arr.elements.length);
+      });
+    }
+    if (propName === "pop") {
+      return makeNativeFn((args: runtimeVal[], scope: env) => {
+        return arr.elements.pop() ?? makeNull();
+      });
+    }
+    if (typeof propName === "number") {
+      return arr.elements[propName] ?? makeNull();
+    }
+    return makeNull();
+  }
+
+  if (object.type === "string") {
+    const str = object as StringVal;
+    if (propName === "length") return makeNumber(str.value.length);
+    if (propName === "split") {
+      return makeNativeFn((args: runtimeVal[], scope: env) => {
+        const separator = args[0]?.type === "string" ? (args[0] as StringVal).value : "";
+        const parts = str.value.split(separator);
+        return {
+          type: "array",
+          elements: parts.map(p => makeString(p))
+        } as ArrayVal;
+      });
+    }
+    return makeNull();
+  }
+
+  throw new Error(`Cannot access property '${propName}' on type ${object.type}`);
+}
+
 export function evaluate(astNode: Stmt, env: env): runtimeVal {
   switch (astNode.kind) {
     case "NumericLiteral":
@@ -272,6 +373,8 @@ export function evaluate(astNode: Stmt, env: env): runtimeVal {
         value: (astNode as NumericLiteral).value,
         type: "number",
       } as NumberVal;
+    case "StringLiteral":
+      return makeString((astNode as StringLiteral).value);
 
     case "NullLiteral":
       return makeNull();
@@ -281,6 +384,8 @@ export function evaluate(astNode: Stmt, env: env): runtimeVal {
       return evaluateObject(astNode as ObjectLiteral, env);
     case "CallExpr":
       return evaluateCallExpr(astNode as CallExpr , env);
+    case "UnaryExpr":
+      return evaluateUnaryExpr(astNode as UnaryExpr, env);
     case "BinaryExp":
       return evaluateBinaryExp(astNode as BinaryExp, env);
     case "AssignmentExpr":
@@ -301,6 +406,8 @@ export function evaluate(astNode: Stmt, env: env): runtimeVal {
       return evaluateForStatement(astNode as ForStatement, env);
     case "ArrayLiteral":
       return evaluateArrayLiteral(astNode as ArrayLiteral, env);
+    case "MemberExpr":
+      return evaluateMemberExpr(astNode as MemberExpr, env);
     default:
       throw new Error(
         `This AST node has not been set for interpretation! ${JSON.stringify(astNode)}`,

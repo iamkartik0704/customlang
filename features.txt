@@ -1,0 +1,69 @@
+# ToadCode Features Overview
+
+ToadCode is a dynamically typed, interpreted programming language with C-style syntax and built-in features that make it easy to write flexible scripts.
+
+## 1. Variables and Constants
+- `let` keyword for mutable variables.
+- `const` keyword for immutable constants.
+Example: 
+```toadcode
+let x = 10;
+const PI = 3.14;
+```
+
+## 2. Data Types
+- **Numbers**: Integers and floating-point numbers.
+- **Strings**: Text literals enclosed in quotes.
+- **Booleans**: `true` and `false`.
+- **Null**: `null` keyword represents an empty or uninitialized value.
+- **Arrays**: Ordered list of values, e.g., `[1, 2, "hello"]`.
+- **Objects**: Key-value mappings (dictionaries), e.g., `{ name: "Toad", age: 2 }`.
+
+## 3. Operators
+- **Mathematical**: `+`, `-`, `*`, `/`, `%`
+- **Assignment**: `=`
+- **Comparison**: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- **Unary**: `!` (logical NOT), `-` (numeric negation)
+
+## 4. Control Flow
+- **If / Else Statements**: Conditional branching.
+- **While Loops**: Execute block as long as condition is true.
+- **For Loops**: Traditional C-style initialization, condition, and step loops.
+Example:
+```toadcode
+for (let i = 0; i < 5; i = i + 1) {
+    if (i % 2 == 0) {
+        toad("Even");
+    } else {
+        toad("Odd");
+    }
+}
+```
+
+## 5. Functions
+- **Named Functions**: Declared using the `fn` keyword.
+- **Arrow Functions**: Anonymous functions using `=>` (supports implicit and explicit returns).
+Example:
+```toadcode
+fn add(a, b) {
+    return a + b;
+}
+let multiply = (x, y) => x * y;
+```
+
+## 6. Member Expressions & Methods
+- **Object Access**: Dot notation (`obj.prop`) and computed bracket notation (`arr[0]`).
+- **Array Methods**:
+  - `.length`: Returns the number of items in the array.
+  - `.push(item)`: Adds an item to the end of the array.
+  - `.pop()`: Removes and returns the last item in the array.
+- **String Methods**:
+  - `.length`: Returns the number of characters in the string.
+  - `.split(separator)`: Splits the string into an array of substrings based on the separator.
+
+## 7. Built-in Environment Functions
+- `toad(...)`: Prints outputs to the console (equivalent to console.log).
+- `time()`: Returns the current epoch timestamp in milliseconds.
+
+## 8. Miscellaneous
+- **Comments**: Single-line comments are supported using `//`.

@@ -7,6 +7,7 @@ import * as fs from "fs";
 export enum Tokentype {
   Null,
   Number,
+  String,
   Equals,
   Fn,
   Identifier,
@@ -30,6 +31,7 @@ export enum Tokentype {
   Else,
   While,
   For,
+  Arrow, // =>
 }
 /*
 
@@ -41,7 +43,7 @@ creating a record for keywords (acts like a dictionary){    record in TS is equi
 
 const KEYWORDS: Record<string, Tokentype> = {
   let: Tokentype.Let,
-  Null: Tokentype.Null,
+  null: Tokentype.Null,
   const: Tokentype.const,
   fn: Tokentype.Fn,
   return: Tokentype.Return,
@@ -109,6 +111,12 @@ export function tokenize(sourceCode: string): Token[] {
     } else if (src[0] === "[") {
       tokens.push(token(src[0], Tokentype.OpenSquare));
       src.shift();
+    } else if (src[0] === "/" && src.length > 1 && src[1] === "/") {
+      src.shift(); // consume first /
+      src.shift(); // consume second /
+      while (src.length > 0 && (src[0] as string) !== "\n") {
+        src.shift(); // consume comment content
+      }
     } else if (
       src[0] === "+" ||
       src[0] === "-" ||
@@ -122,6 +130,10 @@ export function tokenize(sourceCode: string): Token[] {
         src.shift();
         src.shift();
         tokens.push(token("==", Tokentype.BinaryOperators));
+      } else if (src.length > 1 && src[1] === ">") {
+        src.shift();
+        src.shift();
+        tokens.push(token("=>", Tokentype.Arrow));
       } else {
         tokens.push(token(src.shift() as string, Tokentype.Equals));
       }
@@ -173,7 +185,15 @@ export function tokenize(sourceCode: string): Token[] {
       // this would be responsible for handelling the multicharacter tokens
       // 1. handelling the number tokens
 
-      if (isint(src[0])) {
+      if (src[0] === '"' || src[0] === "'") {
+        const quote = src.shift();
+        let str = "";
+        while (src.length > 0 && src[0] !== quote) {
+          str += src.shift();
+        }
+        if (src.length > 0) src.shift(); // consume closing quote
+        tokens.push(token(str, Tokentype.String));
+      } else if (isint(src[0])) {
         let num = "";
         // Allow digits AND the decimal point
         while (src.length > 0 && (isint(src[0]) || src[0] === ".")) {

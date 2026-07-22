@@ -1,6 +1,6 @@
 {
   "name": "toadcode",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "ToadCode is a custom, dynamically typed toy programming language built entirely from scratch in TypeScript. It includes a custom lexer, parser, and tree-walk interpreter.",
   "main": "dist/main.js",
   "files": [
