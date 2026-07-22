@@ -25,6 +25,11 @@ The following keywords are reserved in ToadCode and cannot be used as identifier
 - `while`, `for`
 - `true`, `false`, `null`
 
+## VS Code Extension
+
+ToadCode has its own dedicated VS Code extension for syntax highlighting and snippets! You can install **ToadCode 3.14** from the VS Code Marketplace:
+[ToadCode 3.14 Extension on VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=KARTIKCHAWLA.toadcode-pro)
+
 ## Getting Started
 
 Since the interpreter is written in TypeScript, you'll need Node.js and `tsc` installed on your machine.
